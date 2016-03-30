@@ -1,4 +1,8 @@
 {% set salt_version = salt['pillar.get']('salt_version', '') %}
+{% set repo_pkg = salt['pillar.get']('repo_pkg', '') %}
+{% set latest = salt['pillar.get']('latest', '') %}
+{% set dev = salt['pillar.get']('dev', '') %}
+{% set os = salt['grains.get']('os', '') %}
 {% set cloud_profile = salt['pillar.get']('cloud_profile', '') %}
 {% set orch_master = 'ch3ll-master*' %}
 
@@ -25,4 +29,16 @@ verify_host_{{ host }}:
     - tgt: {{ orch_master }}
     - arg:
       - salt-ssh {{ host }} -i test.ping
+
+test_install_{{ host }}:
+  salt.state:
+    - tgt: {{ host }}
+    - ssh: 'true'
+    - sls:
+      - test_install.saltstack
+    - pillar:
+        salt_version: {{ salt_version }}
+        dev: {{ dev }}
+        latest: {{ latest }}
+        repo_pkg: {{ repo_pkg }}
 {% endfor %}
