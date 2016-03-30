@@ -41,4 +41,25 @@ test_install_{{ host }}:
         dev: {{ dev }}
         latest: {{ latest }}
         repo_pkg: {{ repo_pkg }}
+
+test_setup_{{ host }}:
+  salt.state:
+    - tgt: {{ host }}
+    - ssh: 'true'
+    - sls:
+      - test_setup
+    - pillar:
+        salt_version: {{ salt_version }}
+        dev: {{ dev }}
+
+test_run_{{ host }}:
+  salt.state:
+    - tgt: {{ host }}
+    - ssh: 'true'
+    - sls:
+      - test_run
+    - pillar:
+        salt_version: {{ salt_version }}
+        dev: {{ dev }}
+
 {% endfor %}
