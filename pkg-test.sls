@@ -1,4 +1,5 @@
 {% set salt_version = salt['pillar.get']('salt_version', '') %}
+{% set upgrade_salt_version = salt['pillar.get']('upgrade_salt_version', '') %}
 {% set repo_pkg = salt['pillar.get']('repo_pkg', '') %}
 {% set latest = salt['pillar.get']('latest', '') %}
 {% set dev = salt['pillar.get']('dev', '') %}
@@ -6,6 +7,7 @@
 {% set cloud_profile = salt['pillar.get']('cloud_profile', '') %}
 {% set orch_master = salt['pillar.get']('orch_master', '') %}
 {% set username = salt['pillar.get']('username', '') %}
+{% set upgrade = salt['pillar.get']('upgrade', '') %}
 
 {% for profile in cloud_profile %}
 {% set host = username + profile %}
@@ -51,6 +53,7 @@ test_install_{{ host }}:
         dev: {{ dev }}
         latest: {{ latest }}
         repo_pkg: {{ repo_pkg }}
+        upgrade: False
 
 test_setup_{{ host }}:
   salt.state:
@@ -71,5 +74,30 @@ test_run_{{ host }}:
     - pillar:
         salt_version: {{ salt_version }}
         dev: {{ dev }}
+
+{% if upgrade %}
+test_upgrade_{{ host }}:
+  salt.state:
+    - tgt: {{ host }}
+    - ssh: 'true'
+    - sls:
+      - test_install.saltstack
+    - pillar:
+        salt_version: {{ upgrade_salt_version }}
+        dev: {{ dev }}
+        latest: {{ latest }}
+        repo_pkg: {{ repo_pkg }}
+        upgrade: {{ upgrade }}
+
+test_upgrade_run_{{ host }}:
+  salt.state:
+    - tgt: {{ host }}
+    - ssh: 'true'
+    - sls:
+      - test_run
+    - pillar:
+        salt_version: {{ upgrade_salt_version }}
+        dev: {{ dev }}
+{% endif %}
 
 {% endfor %}
