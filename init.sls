@@ -4,10 +4,11 @@
 {% set dev = salt['pillar.get']('dev', '') %}
 {% set os = salt['grains.get']('os', '') %}
 {% set cloud_profile = salt['pillar.get']('cloud_profile', '') %}
-{% set orch_master = 'ch3ll-master*' %}
+{% set orch_master = salt['pillar.get']('orch_master', '') %}
+{% set username = salt['pillar.get']('username', '') %}
 
 {% for profile in cloud_profile %}
-{% set host = 'ch3ll-' + profile %}
+{% set host = username + profile %}
 create_{{ host }}:
   salt.function:
     - name: salt_cluster.create_node
@@ -22,6 +23,15 @@ sleep_{{ host }}:
     - tgt: {{ orch_master }}
     - arg:
       - 120
+
+{% if '5' in host %}
+install_python:
+  salt.function:
+    - name: cmd.run
+    - tgt: {{ orch_master }}
+    - arg:
+      - salt-ssh {{ host }} -ir "mv /var/lib/rpm/Pubkeys /tmp/; rpm --rebuilddb; yum -y install epel-release; yum -y install python26-libs; yum -y install libffi; yum -y install python26"
+{% endif %}
 
 verify_host_{{ host }}:
   salt.function:
