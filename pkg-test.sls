@@ -3,14 +3,15 @@
 {% set repo_pkg = salt['pillar.get']('repo_pkg', '') %}
 {% set latest = salt['pillar.get']('latest', '') %}
 {% set dev = salt['pillar.get']('dev', '') %}
-{% set os = salt['grains.get']('os', '') %}
 {% set cloud_profile = salt['pillar.get']('cloud_profile', '') %}
 {% set orch_master = salt['pillar.get']('orch_master', '') %}
 {% set username = salt['pillar.get']('username', '') %}
 {% set upgrade = salt['pillar.get']('upgrade', '') %}
+{% set hosts = [] %}
 
 {% for profile in cloud_profile %}
 {% set host = username + profile %}
+{% do hosts.append(host) %}
 create_{{ host }}:
   salt.function:
     - name: salt_cluster.create_node
@@ -41,10 +42,12 @@ verify_host_{{ host }}:
     - tgt: {{ orch_master }}
     - arg:
       - salt-ssh {{ host }} -i test.ping
+{% endfor %}
 
-test_install_{{ host }}:
+test_install:
   salt.state:
-    - tgt: {{ host }}
+    - tgt: {{ hosts }}
+    - tgt_type: list
     - ssh: 'true'
     - sls:
       - test_install.saltstack
@@ -55,9 +58,10 @@ test_install_{{ host }}:
         repo_pkg: {{ repo_pkg }}
         upgrade: False
 
-test_setup_{{ host }}:
+test_setup:
   salt.state:
-    - tgt: {{ host }}
+    - tgt: {{ hosts }}
+    - tgt_type: list
     - ssh: 'true'
     - sls:
       - test_setup
@@ -65,9 +69,10 @@ test_setup_{{ host }}:
         salt_version: {{ salt_version }}
         dev: {{ dev }}
 
-test_run_{{ host }}:
+test_run:
   salt.state:
-    - tgt: {{ host }}
+    - tgt: {{ hosts }}
+    - tgt_type: list
     - ssh: 'true'
     - sls:
       - test_run
@@ -76,9 +81,10 @@ test_run_{{ host }}:
         dev: {{ dev }}
 
 {% if upgrade %}
-test_upgrade_{{ host }}:
+test_upgrade:
   salt.state:
-    - tgt: {{ host }}
+    - tgt: {{ hosts }}
+    - tgt_type: list
     - ssh: 'true'
     - sls:
       - test_install.saltstack
@@ -89,9 +95,10 @@ test_upgrade_{{ host }}:
         repo_pkg: {{ repo_pkg }}
         upgrade: {{ upgrade }}
 
-test_upgrade_run_{{ host }}:
+test_upgrade_run:
   salt.state:
-    - tgt: {{ host }}
+    - tgt: {{ hosts }}
+    - tgt_type: list
     - ssh: 'true'
     - sls:
       - test_run
@@ -100,4 +107,3 @@ test_upgrade_run_{{ host }}:
         dev: {{ dev }}
 {% endif %}
 
-{% endfor %}
